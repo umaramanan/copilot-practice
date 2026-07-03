@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Copilot & Git Reference — Daily Cheat Sheet</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #161923;
+    --panel-border: #262b3a;
+    --text: #e4e6ec;
+    --text-dim: #9aa0b4;
+    --accent: #5fb3ff;
+    --accent-soft: #223047;
+    --green: #4ec98f;
+    --red: #ff6b6b;
+    --code-bg: #1c202c;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+  }
+  /* Sidebar */
+  nav#sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--panel);
+    border-right: 1px solid var(--panel-border);
+    padding: 20px 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  nav#sidebar .brand {
+    padding: 0 20px 16px 20px;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text);
+    border-bottom: 1px solid var(--panel-border);
+    margin-bottom: 12px;
+  }
+  nav#sidebar .brand span {
+    display: block;
+    font-weight: 400;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+  nav#sidebar a {
+    display: block;
+    padding: 7px 20px;
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 13.5px;
+    border-left: 2px solid transparent;
+    transition: all .12s ease;
+  }
+  nav#sidebar a:hover {
+    color: var(--text);
+    background: var(--accent-soft);
+  }
+  nav#sidebar a.active {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  nav#sidebar .group-label {
+    padding: 14px 20px 4px 20px;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #5b6178;
+  }
+
+  /* Main */
+  main {
+    flex: 1;
+    padding: 40px 48px 100px 48px;
+    max-width: 880px;
+  }
+  h1.page-title {
+    font-size: 26px;
+    margin: 0 0 6px 0;
+  }
+  .page-sub {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin-bottom: 36px;
+  }
+  section.module {
+    border-top: 1px solid var(--panel-border);
+    padding: 36px 0;
+  }
+  section.module:first-of-type { border-top: none; padding-top: 0; }
+  h2 {
+    font-size: 20px;
+    margin: 0 0 4px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  h2 .status {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  h2 .status.done { background: rgba(78,201,143,.15); color: var(--green); }
+  h2 .status.progress { background: rgba(95,179,255,.15); color: var(--accent); }
+  .module-goal {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin-bottom: 18px;
+  }
+  h3 {
+    font-size: 14px;
+    color: var(--accent);
+    margin: 22px 0 8px 0;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+  }
+  p { line-height: 1.65; font-size: 14.5px; color: var(--text); }
+  ul, ol { line-height: 1.7; font-size: 14.5px; padding-left: 22px; }
+  li { margin-bottom: 4px; }
+  code.inline {
+    font-family: var(--mono);
+    background: var(--code-bg);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #ffcb8b;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.6;
+    margin: 10px 0 16px 0;
+    position: relative;
+  }
+  pre code { color: #c9d1e0; }
+  .copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--panel-border);
+    color: var(--text-dim);
+    border: none;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: var(--sans);
+  }
+  .copy-btn:hover { background: var(--accent-soft); color: var(--accent); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    margin: 10px 0 18px 0;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--panel-border);
+  }
+  th { color: var(--text-dim); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 10px 14px;
+    border-radius: 0 6px 6px 0;
+    font-size: 13.5px;
+    margin: 12px 0;
+  }
+  .callout.warn { border-left-color: #f0b429; background: rgba(240,180,41,.08); }
+  .callout strong { color: var(--text); }
+  #searchbox {
+    width: 100%;
+    padding: 8px 10px;
+    margin: 0 0 8px 0;
+    background: var(--code-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 13px;
+  }
+  #searchbox:focus { outline: 1px solid var(--accent); }
+  .hidden { display: none !important; }
+  footer {
+    color: var(--text-dim);
+    font-size: 12.5px;
+    padding-top: 30px;
+    border-top: 1px solid var(--panel-border);
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+
+<nav id="sidebar">
+  <div class="brand">Copilot + Git Reference<span>Your daily cheat sheet</span></div>
+  <input type="text" id="searchbox" placeholder="Search this page...">
+  <div class="group-label">Modules</div>
+  <a href="#m1">1. Setup & First Suggestion</a>
+  <a href="#m2">2. Prompting Quality</a>
+  <a href="#m3">3. Copilot Chat</a>
+  <a href="#m4">4. Custom Instructions</a>
+  <a href="#m5">5. Agent Mode & Testing</a>
+  <a href="#m6">6. Copilot CLI</a>
+  <a href="#m65">6.5 Git & PR Workflow</a>
+  <a href="#m7">7. CI/CD (in progress)</a>
+  <div class="group-label">Quick Reference</div>
+  <a href="#cheatsheet">All Commands Cheat Sheet</a>
+  <a href="#glossary">Glossary</a>
+  <a href="#resume">Resume Tips</a>
+</nav>
+
+<main>
+  <h1 class="page-title">GitHub Copilot Mastery — Reference</h1>
+  <div class="page-sub">Everything covered so far, in one place. Bookmark this page for daily reference.</div>
+
+  <!-- MODULE 1 -->
+  <section class="module" id="m1">
+    <h2>Module 1 — Setup & First Suggestion <span class="status done">Done</span></h2>
+    <div class="module-goal">See Copilot turn a plain-English comment into working code.</div>
+
+    <h3>Key concept</h3>
+    <p>Copilot predicts code based on: your comment's exact wording, the filename/language, and patterns from its training data. It is <strong>not</strong> reading your mind — always review what it generates.</p>
+
+    <h3>Shortcuts</h3>
+    <table>
+      <tr><th>Action</th><th>Shortcut</th></tr>
+      <tr><td>Accept a suggestion</td><td><code class="inline">Tab</code></td></tr>
+      <tr><td>Reject/dismiss a suggestion</td><td><code class="inline">Esc</code></td></tr>
+      <tr><td>Next alternative</td><td><code class="inline">Alt+]</code> / <code class="inline">Option+]</code></td></tr>
+      <tr><td>Previous alternative</td><td><code class="inline">Alt+[</code> / <code class="inline">Option+[</code></td></tr>
+      <tr><td>Force a suggestion</td><td><code class="inline">Alt+\</code> / <code class="inline">Option+\</code></td></tr>
+    </table>
+
+    <h3>Run a Python file</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>python3 filename.py</code></pre>
+
+    <div class="callout"><strong>Lesson learned:</strong> Copilot sometimes adds extra unrequested code (it pattern-matches to common examples). Always read and clean up what it gives you before trusting it.</div>
+  </section>
+
+  <!-- MODULE 2 -->
+  <section class="module" id="m2">
+    <h2>Module 2 — Prompting Quality <span class="status done">Done</span></h2>
+    <div class="module-goal">Understand how comment specificity changes Copilot's output quality.</div>
+
+    <h3>The three levels</h3>
+    <ol>
+      <li><strong>Vague comment</strong> (<code class="inline"># sort the list</code>) → Copilot guesses, often wrong, silently.</li>
+      <li><strong>Specific comment</strong> (<code class="inline"># sort a list of dictionaries by the 'price' key, descending</code>) → correct logic, generic naming.</li>
+      <li><strong>Typed function signature</strong> (<code class="inline">def sort_products_by_price(products: list[dict]) -> list[dict]:</code>) → best result: clear names, correct logic, often auto-generates a docstring.</li>
+    </ol>
+
+    <h3>Vocabulary</h3>
+    <p><strong>Type hint:</strong> annotation telling Python what data type a variable/parameter should be, e.g. <code class="inline">products: list[dict]</code>. Doesn't change runtime behavior — it's documentation a machine can also check.</p>
+    <p><strong>Lambda:</strong> a small, one-line, unnamed function. <code class="inline">lambda x: x['price']</code> means "given <code class="inline">x</code>, return <code class="inline">x['price']</code>." Often used inline as a sort key.</p>
+
+    <div class="callout"><strong>Lesson learned:</strong> Specificity + structure = your biggest lever for good Copilot output.</div>
+  </section>
+
+  <!-- MODULE 3 -->
+  <section class="module" id="m3">
+    <h2>Module 3 — Copilot Chat <span class="status done">Done</span></h2>
+    <div class="module-goal">Use conversational AI (not autocomplete) to explain and fix code.</div>
+
+    <h3>Open Chat</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>Ctrl+Alt+I   (Win/Linux)
+Cmd+Ctrl+I   (Mac)</code></pre>
+
+    <h3>Slash commands</h3>
+    <table>
+      <tr><th>Command</th><th>What it does</th></tr>
+      <tr><td><code class="inline">/explain</code></td><td>Explains selected code in plain English, including hidden risks</td></tr>
+      <tr><td><code class="inline">/fix</code></td><td>Diagnoses and proposes a fix for a bug</td></tr>
+      <tr><td><code class="inline">/tests</code></td><td>Generates test cases for a function</td></tr>
+      <tr><td><code class="inline">@workspace</code></td><td>Brings in context from the entire project</td></tr>
+    </table>
+
+    <h3>Vocabulary</h3>
+    <p><strong>Traceback:</strong> Python's error report showing the chain of calls leading to a crash — read bottom to top.</p>
+    <p><strong>KeyError:</strong> a crash from accessing a dictionary key that doesn't exist.</p>
+    <p><strong>.get('key', default):</strong> the safe way to read a dictionary — returns a default instead of crashing.</p>
+
+    <h3>Clean file overwrite trick (fixes editor corruption)</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>cat > filename.py << 'EOF'
+[paste your full clean code here]
+EOF</code></pre>
+
+    <div class="callout warn"><strong>Remember:</strong> "runs without crashing" ≠ "correct." Always check whether a fix reflects the right behavior, not just the simplest technical patch.</div>
+  </section>
+
+  <!-- MODULE 4 -->
+  <section class="module" id="m4">
+    <h2>Module 4 — Custom Instructions <span class="status done">Done</span></h2>
+    <div class="module-goal">Set project-wide rules Copilot follows automatically.</div>
+
+    <h3>Create the instructions file</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>mkdir -p .github
+cat > .github/copilot-instructions.md << 'EOF'
+- All Python functions must have type hints and docstrings
+- When accessing dictionary keys that might be missing, always use .get() with a sensible default instead of square-bracket access
+- Prefer list comprehensions over explicit for-loops where it keeps the code readable
+EOF</code></pre>
+
+    <h3>Verify it's working</h3>
+    <p>Ask Copilot for a new function with <strong>zero style guidance</strong> in your prompt — if it still follows your rules automatically, it's working.</p>
+
+    <h3>Type hint vs. Docstring</h3>
+    <table>
+      <tr><th>Type hint</th><th>Docstring</th></tr>
+      <tr><td>What data types go in/out</td><td>What the function actually does</td></tr>
+      <tr><td>Machine-checkable, terse</td><td>Human sentences, more detail</td></tr>
+    </table>
+
+    <div class="callout"><strong>Lesson learned:</strong> Custom instructions are a strong nudge, not a guarantee. Still review every output.</div>
+  </section>
+
+  <!-- MODULE 5 -->
+  <section class="module" id="m5">
+    <h2>Module 5 — Agent Mode & Testing <span class="status done">Done</span></h2>
+    <div class="module-goal">Delegate multi-step, multi-file tasks and review autonomous AI work.</div>
+
+    <h3>Key concept</h3>
+    <p>Agent Mode = delegation, not assistance. Describe a <em>goal</em>; it plans, creates/edits multiple files, and may propose terminal commands — pausing for approval at each step (depending on settings).</p>
+
+    <div class="callout warn"><strong>Watch for:</strong> Agent may add behavior you didn't ask for (e.g. input validation). Not wrong — but a decision it made unilaterally. Always identify what it added beyond your literal request.</div>
+
+    <h3>What a test is</h3>
+    <p>Code that automatically checks whether other code behaves correctly, using <code class="inline">assert</code> statements — replacing manual "run it and eyeball the output" checking.</p>
+
+    <h3>Anatomy of a test</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>def test_add_item_to_empty_inventory():   # name describes the scenario
+    inventory = []                         # set up starting condition
+    updated = add_item(inventory, "Widget", 9.99, 5)  # call the real function
+    assert len(updated) == 1               # the actual claim being checked</code></pre>
+
+    <h3>Run tests</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>pytest</code></pre>
+
+    <h3>Reading pytest output</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>collected 5 items                                    ← total test_ functions found
+test_inventory.py .....                    [100%]    ← one dot per PASSED test; F = failed
+5 passed in 0.02s                                     ← final summary — always check this</code></pre>
+
+    <h3>Prove a test suite is real</h3>
+    <ol>
+      <li>Deliberately introduce a small wrong change ("fake bug")</li>
+      <li>Run <code class="inline">pytest</code> again — confirm it shows <code class="inline">F</code></li>
+      <li>Undo the fake bug, confirm all pass again</li>
+    </ol>
+
+    <h3>Safe find-and-replace (used to inject/remove a fake bug)</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>sed -i 's/OLD_TEXT/NEW_TEXT/' filename.py</code></pre>
+
+    <div class="callout"><strong>Lesson learned:</strong> A passing test only proves the code satisfies that specific check — not that it does everything you intended.</div>
+  </section>
+
+  <!-- MODULE 6 -->
+  <section class="module" id="m6">
+    <h2>Module 6 — Copilot CLI <span class="status done">Done</span></h2>
+    <div class="module-goal">Use Copilot directly from the terminal, outside any editor UI.</div>
+
+    <h3>Command format</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>copilot -p "your plain-English task description"</code></pre>
+    <p><code class="inline">-p</code> = "prompt mode" — runs once, non-interactively, then exits.</p>
+
+    <h3>When to use CLI vs. the editor</h3>
+    <ul>
+      <li>No graphical editor available (e.g. SSH'd into a server)</li>
+      <li>Quick one-off tasks while already in a terminal</li>
+      <li>Scripting/automating repetitive tasks</li>
+      <li>Managing multiple projects without opening each in a full editor</li>
+    </ul>
+
+    <div class="callout warn"><strong>Safety behavior:</strong> in <code class="inline">-p</code> mode, CLI cannot ask permission mid-task (no one is present to respond) — so it refuses to run commands entirely rather than assume "yes." The more autonomous a mode is, the more cautious it should be.</div>
+  </section>
+
+  <!-- MODULE 6.5 -->
+  <section class="module" id="m65">
+    <h2>Module 6.5 — Git & PR Workflow <span class="status done">Done</span></h2>
+    <div class="module-goal">Move from working directly on main to a safe branch → commit → push → PR flow.</div>
+
+    <h3>Vocabulary</h3>
+    <table>
+      <tr><th>Term</th><th>Meaning</th></tr>
+      <tr><td>Branch</td><td>An isolated parallel copy of your code — experiment safely without touching main</td></tr>
+      <tr><td>Commit</td><td>A checkpoint snapshot of changes, saved <strong>locally</strong>, with a description</td></tr>
+      <tr><td>Push</td><td>Sends local commits up to GitHub, making them visible online</td></tr>
+      <tr><td>Pull Request (PR)</td><td>A formal request to merge your branch into main, with room for review/checks</td></tr>
+      <tr><td>Merge</td><td>Actually combining your branch's changes into main</td></tr>
+    </table>
+
+    <h3>Create and switch to a new branch</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>git checkout -b branch-name</code></pre>
+
+    <h3>Check current status / branch</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>git status</code></pre>
+    <p>Notice: your terminal prompt also shows the current branch in parentheses, e.g. <code class="inline">(add-negative-price-check)</code>.</p>
+
+    <h3>The core save cycle</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>git add .
+git commit -m "short description of what changed"
+git push</code></pre>
+
+    <table>
+      <tr><th>Step</th><th>Analogy</th></tr>
+      <tr><td><code class="inline">git add .</code></td><td>Putting pages into an envelope, ready to mail</td></tr>
+      <tr><td><code class="inline">git commit -m "..."</code></td><td>Sealing the envelope, writing a label</td></tr>
+      <tr><td><code class="inline">git push</code></td><td>Actually mailing it — now it exists elsewhere too</td></tr>
+    </table>
+
+    <div class="callout warn"><strong>Common typo traps:</strong> <code class="inline">git add.</code> (missing space) fails. <code class="inline">git commit "msg"</code> (missing <code class="inline">-m</code>) fails. <code class="inline">orgin</code> instead of <code class="inline">origin</code> fails.</div>
+
+    <h3>First push of a brand-new branch</h3>
+    <p>If you see <em>"has no upstream branch"</em>, run the command Git suggests:</p>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>git push --set-upstream origin branch-name</code></pre>
+    <p>Only needed the <strong>first</strong> time you push a new branch — after that, plain <code class="inline">git push</code> works.</p>
+
+    <h3>.gitignore — exclude files Git should never track</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>echo "__pycache__/" > .gitignore</code></pre>
+
+    <h3>Reading git status output</h3>
+    <table>
+      <tr><td><code class="inline">Untracked files</code></td><td>Git sees them but isn't saving history yet</td></tr>
+      <tr><td><code class="inline">Changes to be committed</code></td><td>Staged, ready for commit</td></tr>
+      <tr><td><code class="inline">ahead of 'origin/main' by N commits</code></td><td>Local commits GitHub doesn't have yet — need to push</td></tr>
+      <tr><td><code class="inline">nothing to commit, working tree clean</code></td><td>Everything saved and in sync</td></tr>
+    </table>
+
+    <h3>Opening a PR</h3>
+    <p>After pushing a new branch, GitHub gives you a direct link in the terminal output, e.g.:</p>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>https://github.com/USERNAME/REPO/pull/new/branch-name</code></pre>
+    <p>Open that URL <strong>in your browser</strong> (not the terminal). Fill in title + description, review the diff (red = removed, green = added), then click <strong>Create pull request</strong>.</p>
+
+    <h3>Reading a PR diff</h3>
+    <ul>
+      <li><strong>base</strong> = branch you're merging INTO (usually main)</li>
+      <li><strong>compare</strong> = your branch with the new changes</li>
+      <li>Red line = removed, Green line = added, white = unchanged context</li>
+      <li>"Able to merge / No conflicts" = safe to combine automatically</li>
+    </ul>
+
+    <div class="callout"><strong>Real workflow order:</strong> Open PR → automated checks run (Module 7) → review happens (Module 8) → then merge. Don't merge immediately after opening.</div>
+  </section>
+
+  <!-- MODULE 7 -->
+  <section class="module" id="m7">
+    <h2>Module 7 — CI/CD with GitHub Actions <span class="status progress">In progress</span></h2>
+    <div class="module-goal">Make tests run automatically on every Pull Request, instead of relying on remembering to run pytest by hand.</div>
+
+    <h3>The plain-English idea</h3>
+    <ol>
+      <li>When should the robot wake up? → Whenever someone opens a Pull Request</li>
+      <li>What computer does it use? → A fresh Ubuntu Linux machine, provided free by GitHub</li>
+      <li>What does it do, step by step?
+        <ul>
+          <li>Download the project's code onto that computer</li>
+          <li>Install Python</li>
+          <li>Install pytest</li>
+          <li>Run <code class="inline">pytest</code></li>
+        </ul>
+      </li>
+    </ol>
+
+    <h3>Where the recipe lives</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>.github/workflows/ci.yml</code></pre>
+
+    <h3>The workflow file (being built)</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>name: Run Tests
+
+on: [pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pytest
+        run: pip install pytest
+
+      - name: Run tests
+        run: pytest</code></pre>
+
+    <div class="callout">We'll walk through this line by line together, then push it and watch real checks appear on PR #1's "Checks" tab for the first time.</div>
+  </section>
+
+  <!-- CHEAT SHEET -->
+  <section class="module" id="cheatsheet">
+    <h2>All Commands — Quick Cheat Sheet</h2>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code># Run Python
+python3 filename.py
+
+# Run tests
+pytest
+
+# Safe file overwrite (bypasses editor issues)
+cat > filename.py << 'EOF'
+...
+EOF
+
+# Safe find-and-replace
+sed -i 's/OLD/NEW/' filename.py
+
+# Git — everyday cycle
+git status
+git add .
+git commit -m "description"
+git push
+
+# Git — branching
+git checkout -b branch-name
+git push --set-upstream origin branch-name   # first push of a new branch only
+
+# .gitignore
+echo "__pycache__/" > .gitignore
+
+# Copilot CLI
+copilot -p "task description"</code></pre>
+  </section>
+
+  <!-- GLOSSARY -->
+  <section class="module" id="glossary">
+    <h2>Glossary</h2>
+    <table>
+      <tr><th>Term</th><th>Meaning</th></tr>
+      <tr><td>Repository (repo)</td><td>A project folder stored on GitHub with full change history</td></tr>
+      <tr><td>Codespace</td><td>A temporary cloud computer GitHub provides, with your repo loaded, accessed via browser</td></tr>
+      <tr><td>Comment</td><td>A line starting with <code class="inline">#</code> in Python — ignored by the computer, read by Copilot and humans</td></tr>
+      <tr><td>Type hint</td><td>Declares expected data types for function inputs/outputs</td></tr>
+      <tr><td>Docstring</td><td><code class="inline">"""..."""</code> block explaining what a function does</td></tr>
+      <tr><td>Lambda</td><td>A small one-line unnamed function</td></tr>
+      <tr><td>Traceback</td><td>Python's chain-of-calls error report, read bottom to top</td></tr>
+      <tr><td>Assert</td><td>A claim in a test that must be true or the test fails</td></tr>
+      <tr><td>Branch</td><td>An isolated parallel copy of the code</td></tr>
+      <tr><td>Commit</td><td>A local checkpoint snapshot with a description</td></tr>
+      <tr><td>Push</td><td>Uploading local commits to GitHub</td></tr>
+      <tr><td>Pull Request (PR)</td><td>A request to merge a branch into main, with room for review</td></tr>
+      <tr><td>CI/CD</td><td>Continuous Integration / Continuous Deployment — automated testing & shipping</td></tr>
+      <tr><td>YAML</td><td>A structured text format used for GitHub Actions workflow files</td></tr>
+    </table>
+  </section>
+
+  <!-- RESUME -->
+  <section class="module" id="resume">
+    <h2>Resume & Interview Notes</h2>
+
+    <h3>Resume bullet (workflow-adjacent roles)</h3>
+    <p>Hands-on experience using GitHub Copilot (Chat, Agent Mode, CLI) to accelerate development workflows, including automated testing (pytest) and Git/PR-based collaboration in a GitHub Codespaces environment.</p>
+
+    <h3>Resume bullet (technical/engineering-adjacent roles)</h3>
+    <p>Practical experience with AI-assisted development using GitHub Copilot — writing and reviewing Copilot-generated Python code, building automated test suites with pytest, and managing feature branches through pull requests. Configured project-level Copilot custom instructions to enforce coding standards.</p>
+
+    <h3>Skills to list (only what you've actually done)</h3>
+    <ul>
+      <li>GitHub Copilot (Chat, Agent Mode, CLI)</li>
+      <li>Python (foundational — functions, type hints, reading/debugging tracebacks)</li>
+      <li>pytest (writing and running automated tests)</li>
+      <li>Git & GitHub (branches, commits, pull requests)</li>
+      <li><em>(add once completed)</em> GitHub Actions / CI-CD pipelines</li>
+    </ul>
+
+    <div class="callout warn"><strong>Don't overclaim:</strong> say "AI-assisted Python development," not "proficient in Python." Don't claim CI/CD experience until Module 7 is actually built and working.</div>
+
+    <h3>The strongest thing to say in an interview</h3>
+    <p>"I learned to treat AI-generated code the way you'd treat a junior developer's pull request — I reviewed every suggestion, verified claims by actually running tests, and proved test coverage was real by intentionally introducing bugs and confirming they were caught."</p>
+
+    <h3>Best portfolio piece</h3>
+    <p>The actual <code class="inline">copilot-practice</code> GitHub repo — showing real branches, PRs, and commit history. Link it directly once it's in good shape.</p>
+  </section>
+
+  <footer>Living document — updated as new modules are completed. Last covers through Module 6.5, with Module 7 in progress.</footer>
+</main>
+
+<script>
+  // Highlight active sidebar link on scroll
+  const sections = document.querySelectorAll('section.module');
+  const links = document.querySelectorAll('#sidebar a');
+  function onScroll() {
+    let current = '';
+    sections.forEach(sec => {
+      const rect = sec.getBoundingClientRect();
+      if (rect.top <= 120) current = sec.id;
+    });
+    links.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+    });
+  }
+  window.addEventListener('scroll', onScroll);
+  onScroll();
+
+  // Copy buttons
+  function copyCode(btn) {
+    const code = btn.parentElement.querySelector('code').innerText;
+    navigator.clipboard.writeText(code).then(() => {
+      const old = btn.innerText;
+      btn.innerText = 'Copied!';
+      setTimeout(() => btn.innerText = old, 1200);
+    });
+  }
+
+  // Simple search
+  document.getElementById('searchbox').addEventListener('input', function(e) {
+    const q = e.target.value.toLowerCase().trim();
+    document.querySelectorAll('section.module').forEach(sec => {
+      if (!q) { sec.classList.remove('hidden'); return; }
+      sec.classList.toggle('hidden', !sec.innerText.toLowerCase().includes(q));
+    });
+  });
+</script>
+
+</body>
+</html>
