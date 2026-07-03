@@ -20,7 +20,7 @@ def add_item(inventory: List[Dict], name: str, price: float, quantity: int) -> L
     if quantity < 0:
         raise ValueError("quantity must be non-negative")
     if price < 0:
-        raise ValueError("price must be non-negative")
+        raise ValueError(f"price must be non-negative, got {price}")
 
     item = {
         "name": name,
