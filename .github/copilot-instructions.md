@@ -1,0 +1,3 @@
+- All Python functions must have type hints and docstrings
+- When accessing dictionary keys that might be missing, always use .get() with a sensible default instead of square-bracket access
+- Prefer list comprehensions over explicit for-loops where it keeps the code readable
