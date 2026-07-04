@@ -225,7 +225,11 @@
   <a href="#m6">6. Copilot CLI</a>
   <a href="#m65">6.5 Git & PR Workflow</a>
   <a href="#m7">7. CI/CD with GitHub Actions</a>
+  <a href="#m8">8. Code Review & Merge</a>
+  <a href="#m9">9. Cloud Agent</a>
+  <a href="#complete">🎓 Course Complete</a>
   <div class="group-label">Quick Reference</div>
+  <a href="#gitref">Full Git Command Reference</a>
   <a href="#cheatsheet">All Commands Cheat Sheet</a>
   <a href="#glossary">Glossary</a>
   <a href="#resume">Resume Tips</a>
@@ -533,6 +537,143 @@ git push</code></pre>
     </ul>
 
     <div class="callout"><strong>Lesson learned:</strong> real, automated tests ran on a machine you never touched, triggered purely by <code class="inline">git push</code> — the complete "workflow → PR → CI/CD" pipeline.</div>
+  </section>
+
+  <!-- MODULE 8 -->
+  <section class="module" id="m8">
+    <h2>Module 8 — Code Review & Merge <span class="status done">Done</span></h2>
+    <div class="module-goal">Get an automated review on your PR, then merge it properly into main.</div>
+
+    <h3>Request Copilot as a reviewer</h3>
+    <p>PR page → right sidebar → "Reviewers" → click "Request" next to Copilot. It reads your actual diff/files (not just a summary) and leaves inline comments plus an overview.</p>
+
+    <div class="callout"><strong>Real issue caught in this project:</strong> scope creep — a PR titled "Improved error message" had grown to include a CI workflow and two docs files. Copilot flagged: "This scope mismatch makes it harder to review... consider updating the PR title/description or splitting into separate PR(s)."</div>
+
+    <h3>Merged vs. Closed — critical distinction</h3>
+    <table>
+      <tr><th>Status</th><th>Meaning</th></tr>
+      <tr><td>Open</td><td>Still active, unresolved</td></tr>
+      <tr><td>Closed (no merge icon)</td><td>Withdrawn — nothing went into main</td></tr>
+      <tr><td><strong>Merged</strong> (purple badge)</td><td>Successfully combined into main</td></tr>
+    </table>
+
+    <h3>Always verify a merge actually happened</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>git checkout main
+git pull
+cat filename.py   # confirm your change is really there</code></pre>
+  </section>
+
+  <!-- MODULE 9 -->
+  <section class="module" id="m9">
+    <h2>Module 9 — Cloud Agent <span class="status done">Done</span></h2>
+    <div class="module-goal">Assign a GitHub Issue and have Copilot independently create a branch, write code + tests, and open a PR.</div>
+
+    <h3>How it differs from Agent Mode</h3>
+    <table>
+      <tr><th></th><th>Agent Mode (M5)</th><th>Cloud Agent (M9)</th></tr>
+      <tr><td>Branch creation</td><td>You, manually</td><td>Copilot, automatically</td></tr>
+      <tr><td>Code writing</td><td>Copilot, with live approval per step</td><td>Copilot, working independently</td></tr>
+      <tr><td>PR opening</td><td>You, manually</td><td>Copilot, automatically</td></tr>
+    </table>
+
+    <h3>How to trigger it</h3>
+    <ol>
+      <li>Write a clear GitHub Issue: title + detailed description (signature, edge cases, reminder to follow <code class="inline">.github/copilot-instructions.md</code>)</li>
+      <li>Assign the Issue to <strong>Copilot</strong> (right sidebar → Assignees)</li>
+      <li>Copilot creates a branch, writes code + tests, opens a linked PR (often starts as "[WIP]"/"Draft")</li>
+    </ol>
+
+    <h3>Two safety gates before merging an agent PR</h3>
+    <div class="callout warn"><strong>"1 workflow awaiting approval"</strong> — GitHub requires a human to explicitly approve running CI on agent-created PRs (protects against a compromised/malicious automated PR silently running code). Click "Approve workflows to run."</div>
+    <div class="callout warn"><strong>"Draft pull requests cannot be merged"</strong> — click "Ready for review" first.</div>
+
+    <h3>Review discipline (same as always, matters more here)</h3>
+    <ul>
+      <li>Read the actual diff, not just Copilot's own summary</li>
+      <li>Check against the original issue requirements, item by item</li>
+      <li>Check against custom instructions (type hints, docstrings, <code class="inline">.get()</code>)</li>
+      <li><strong>Check out the branch and run tests yourself</strong> — don't just trust green checks or an AI's success claim</li>
+    </ul>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>git fetch origin
+git checkout name-of-agents-branch
+pytest</code></pre>
+
+    <div class="callout"><strong>Lesson learned:</strong> more autonomy on the AI's side means review discipline matters more, not less.</div>
+  </section>
+
+  <!-- COURSE COMPLETE -->
+  <section class="module" id="complete">
+    <h2>🎓 Course Complete — Full Pipeline Achieved</h2>
+    <p>You now have real, hands-on experience with the entire pipeline: <strong>describe a task → Copilot writes code (inline, Chat, Agent Mode, CLI, or a fully autonomous Cloud Agent) → branch → PR → automated CI/CD → automated code review → merge into main.</strong></p>
+    <p>Just as importantly, you practiced the discipline that makes this safe: reading diffs before merging, proving tests are real by breaking code on purpose, catching AI-added behavior you didn't ask for, and verifying claims yourself rather than trusting labels or summaries.</p>
+  </section>
+
+  <!-- GIT REFERENCE -->
+  <section class="module" id="gitref">
+    <h2>Complete Git Command Reference</h2>
+
+    <h3>Checking where you are</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>git status                  # current branch, staged/unstaged/untracked files
+git branch                  # list all local branches (★ marks current one)
+git branch -a               # list local AND remote branches
+git log                     # full commit history (press 'q' to exit)
+git log --oneline           # compact one-line-per-commit history</code></pre>
+
+    <h3>Creating and switching branches</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>git checkout -b new-branch-name     # create a NEW branch and switch to it
+git checkout existing-branch-name   # switch to an EXISTING branch (no -b)
+git switch new-branch-name          # newer alternative to checkout for switching
+git switch -c new-branch-name       # newer alternative to checkout -b</code></pre>
+    <div class="callout"><strong>Key distinction:</strong> <code class="inline">-b</code> = "build/create new." Leaving it off = "just switch to something that already exists." Using <code class="inline">-b</code> on an existing branch gives: <code class="inline">fatal: a branch named 'X' already exists</code>.</div>
+
+    <h3>The core save cycle (do this constantly)</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>git add .                        # stage everything changed
+git add filename.py              # stage just one specific file
+git commit -m "clear description of what changed"
+git push                         # send commits to GitHub (existing branch)
+git push --set-upstream origin branch-name   # first push of a BRAND NEW branch only</code></pre>
+
+    <h3>Getting the latest changes from GitHub</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>git fetch origin        # download info about new branches/commits, WITHOUT merging
+git pull                # download AND merge the latest changes into your current branch</code></pre>
+    <p><strong>Difference:</strong> <code class="inline">fetch</code> just looks and reports what's new remotely (safe, doesn't touch your files). <code class="inline">pull</code> = fetch + automatically merges into what you're currently on.</p>
+
+    <h3>Checking out someone else's branch (e.g. reviewing a Cloud Agent's PR)</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>git fetch origin
+git checkout branch-name-from-github</code></pre>
+
+    <h3>Undoing / cleaning up (use carefully)</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>git restore --staged filename.py    # un-stage a file (after add, before commit)
+git restore filename.py             # discard uncommitted changes (careful — permanent)
+git branch -d branch-name           # delete a local branch (only if already merged)
+git branch -D branch-name           # force-delete a local branch (careful)</code></pre>
+
+    <h3>Comparing changes</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>git diff                    # unstaged changes (edited, not yet added)
+git diff --staged           # staged changes (about to be committed)</code></pre>
+
+    <h3>Ignoring files permanently</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>echo "__pycache__/" > .gitignore     # create/overwrite with one pattern
+echo "*.log" >> .gitignore           # APPEND another pattern (>> not >, or you'll erase the file)</code></pre>
+
+    <h3>Common typo traps (all seen firsthand this session)</h3>
+    <table>
+      <tr><th>Typo</th><th>Problem</th></tr>
+      <tr><td><code class="inline">git add.</code></td><td>Missing space — not a real command</td></tr>
+      <tr><td><code class="inline">git commit "message"</code></td><td>Missing <code class="inline">-m</code> flag</td></tr>
+      <tr><td><code class="inline">git push --set-upstream orgin branch</code></td><td>Misspelled "origin"</td></tr>
+      <tr><td><code class="inline">git checkout -b existing-branch</code></td><td><code class="inline">-b</code> fails if branch exists — drop it to just switch</td></tr>
+    </table>
+
+    <h3>Full real-world sequence, start to finish</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>git checkout -b my-feature-branch          # 1. create a branch
+# ... make your code changes ...
+git add .                                  # 2. stage everything
+git commit -m "describe the change"        # 3. commit locally
+git push --set-upstream origin my-feature-branch   # 4. push (first time only)
+# ... open a PR on GitHub, get it reviewed/merged ...
+git checkout main                          # 5. switch back to main
+git pull                                   # 6. pull the now-merged changes</code></pre>
   </section>
 
   <!-- CHEAT SHEET -->
