@@ -339,9 +339,163 @@ Remember: `git add` (stage) → `git commit -m "..."` (seal with a label) → `g
 
 ---
 
-## Still to come (will be added to this guide as we go)
-- **Module 8 — Code Review & Merge:** Copilot-generated PR descriptions, automated code review, resolving comments
-- **Module 9 — Cloud Agent:** assigning a GitHub Issue and letting Copilot build + PR it autonomously
+## Module 8 — Code Review & Merge
+
+**Goal:** Get an automated review on your PR, then merge it properly into `main`.
+
+**How to request Copilot as a reviewer:** on the PR page, right sidebar → "Reviewers" → click "Request" next to Copilot.
+
+**What Copilot's review does:** reads your actual diff/files (not just the summary) and leaves comments — inline on specific lines, and/or a general PR overview describing what changed across every file.
+
+**Real issue it caught in this project:** scope creep — a PR titled "Improved error message" had grown to include a CI workflow and two documentation files. Copilot flagged this as a genuine concern:
+> "This scope mismatch makes it harder to review and to track the intent of the change; consider either updating the PR title/description to reflect the broader changes or splitting the docs/CI work into separate PR(s)."
+
+**Fix chosen:** honestly updated the PR title and description to reflect everything actually included, rather than splitting into multiple PRs (acceptable for a learning project; splitting is the stricter real-world practice).
+
+**Merged vs. Closed — an important distinction:**
+| Status | Meaning |
+|---|---|
+| Open | Still active, not yet resolved either way |
+| Closed (no merge icon) | Withdrawn — none of the changes went into `main` |
+| **Merged** (purple badge) | Changes were successfully combined into `main` — this is what you want |
+
+**Always verify a merge actually happened** — don't just trust the label:
+```bash
+git checkout main
+git pull
+cat filename.py   # confirm your change is really there
+```
+
+---
+
+## Module 9 — Cloud Agent
+
+**Goal:** Assign a GitHub Issue and have Copilot independently create a branch, write code + tests, and open a PR — with zero manual Agent Mode steps.
+
+**How it differs from Agent Mode:**
+| | Agent Mode (Module 5) | Cloud Agent (Module 9) |
+|---|---|---|
+| Branch creation | You, manually | Copilot, automatically |
+| Code writing | Copilot, with your live approval per step | Copilot, working independently |
+| PR opening | You, manually | Copilot, automatically |
+
+**How to trigger it:**
+1. Create a clear, complete GitHub Issue (title + detailed description of exactly what's needed, including function signature, edge cases, and a reminder to follow `.github/copilot-instructions.md`)
+2. In the Issue's right sidebar, under "Assignees," assign it to **Copilot**
+3. Copilot automatically creates a branch, writes the code, and opens a linked PR — often starting as "[WIP]" or "Draft" while it works
+
+**Two safety gates you may hit before merging an agent-created PR:**
+1. **"1 workflow awaiting approval"** — GitHub requires a human with write access to explicitly approve running CI on PRs from automated agents (a safeguard against a compromised/malicious automated PR silently executing arbitrary code). Click "Approve workflows to run."
+2. **"Draft pull requests cannot be merged"** — click "Ready for review" first.
+
+**Review discipline — same as always, even though it's more autonomous:**
+- Read the actual code diff, not just Copilot's own summary of it
+- Check it against your original issue requirements, item by item
+- Check it against your custom instructions (type hints, docstrings, `.get()` usage)
+- **Check out the branch locally and run the tests yourself** — don't just trust that "Checks" shows green or that Copilot's description claims success
+
+```bash
+git fetch origin
+git checkout name-of-agents-branch
+pytest
+```
+
+**Lesson learned:** more autonomy on the AI's side means review discipline matters *more*, not less — the entire course's central theme, applied at its most hands-off point.
+
+---
+
+## Course Complete — Full Pipeline Achieved
+
+You now have real, hands-on experience with the entire pipeline originally asked for: **describe a task → Copilot writes code (via inline suggestions, Chat, Agent Mode, CLI, or a fully autonomous Cloud Agent) → branch → PR → automated CI/CD tests → automated code review → merge into main.**
+
+Just as importantly, you practiced the discipline that makes this safe in real teams: reading diffs before merging, proving tests are real by breaking code on purpose, catching AI-added behavior you didn't ask for, and verifying claims yourself rather than trusting labels or summaries at face value.
+
+---
+
+## Complete Git Command Reference
+
+Everything from branches to checkout to the save cycle, in one place — including a few you haven't used yet but will need.
+
+### Checking where you are
+```bash
+git status                  # current branch, staged/unstaged/untracked files
+git branch                  # list all local branches (★ marks current one)
+git branch -a               # list local AND remote branches
+git log                     # full commit history (press 'q' to exit)
+git log --oneline           # compact one-line-per-commit history
+```
+
+### Creating and switching branches
+```bash
+git checkout -b new-branch-name     # create a NEW branch and switch to it
+git checkout existing-branch-name   # switch to an EXISTING branch (no -b)
+git switch new-branch-name          # newer alternative to checkout for switching
+git switch -c new-branch-name       # newer alternative to checkout -b (creates + switches)
+```
+**Key distinction:** `-b` = "build/create new." Leaving it off = "just switch to something that already exists." Using `-b` on a branch that already exists gives: `fatal: a branch named 'X' already exists`.
+
+### The core save cycle (do this constantly)
+```bash
+git add .                        # stage everything changed
+git add filename.py              # stage just one specific file
+git commit -m "clear description of what changed"
+git push                         # send commits to GitHub (existing branch)
+git push --set-upstream origin branch-name   # first push of a BRAND NEW branch only
+```
+
+### Getting the latest changes from GitHub
+```bash
+git fetch origin        # download info about new branches/commits, WITHOUT merging them in
+git pull                # download AND merge the latest changes into your current branch
+```
+**Difference:** `fetch` just looks and reports what's new remotely (safe, non-destructive, doesn't touch your files). `pull` = `fetch` + automatically merges those changes into what you're currently on. Use `pull` when you want to update your current branch (e.g., updating your local `main` after merging a PR on GitHub).
+
+### Checking out someone else's branch (e.g., reviewing a Cloud Agent's PR)
+```bash
+git fetch origin
+git checkout branch-name-from-github
+```
+Fetch first so Git knows the branch exists, then checkout to actually switch to it locally.
+
+### Undoing / cleaning up (good to know, use carefully)
+```bash
+git restore --staged filename.py    # un-stage a file (after git add, before commit)
+git restore filename.py             # discard uncommitted changes to a file (careful — permanent)
+git branch -d branch-name           # delete a local branch (only if already merged)
+git branch -D branch-name           # force-delete a local branch (even if not merged — careful)
+```
+
+### Comparing changes
+```bash
+git diff                    # see unstaged changes (what you've edited, not yet added)
+git diff --staged           # see staged changes (what's about to be committed)
+```
+
+### Ignoring files permanently
+```bash
+echo "__pycache__/" > .gitignore     # create/overwrite with one ignored pattern
+echo "*.log" >> .gitignore           # APPEND another pattern (note: >> not >, or you'll erase the file)
+```
+
+### Common typo traps (all seen firsthand this session)
+| Typo | Problem |
+|---|---|
+| `git add.` | Missing space — not a real command |
+| `git commit "message"` | Missing `-m` flag — Git thinks "message" is a filename |
+| `git push --set-upstream orgin branch` | Misspelled `origin` |
+| `git checkout -b existing-branch` | `-b` fails if the branch already exists — drop `-b` to just switch |
+
+### Full real-world sequence, start to finish (what you actually did across Modules 6.5–9)
+```bash
+git checkout -b my-feature-branch          # 1. create a branch for new work
+# ... make your code changes ...
+git add .                                  # 2. stage everything
+git commit -m "describe the change"        # 3. commit locally
+git push --set-upstream origin my-feature-branch   # 4. push + link to GitHub (first time only)
+# ... open a PR on GitHub, get it reviewed/merged ...
+git checkout main                          # 5. switch back to main
+git pull                                   # 6. pull down the now-merged changes
+```
 
 ---
 
