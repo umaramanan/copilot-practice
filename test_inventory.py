@@ -59,6 +59,7 @@ def test_remove_item_removes_first_matching_item():
     assert len(updated) == 2
     assert updated[0].get("name") == "Gadget"
     assert updated[1].get("name") == "Widget"
+    assert updated[1].get("price") == 3.0
 
 
 def test_remove_item_no_match_leaves_inventory_unchanged():
