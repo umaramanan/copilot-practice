@@ -1,6 +1,6 @@
 import pytest
 
-from inventory import add_item
+from inventory import add_item, remove_item
 
 
 def test_add_item_to_empty_inventory():
@@ -45,3 +45,26 @@ def test_add_item_raises_on_negative_quantity():
 def test_add_item_raises_on_negative_price():
     with pytest.raises(ValueError):
         add_item([], "Bad", -5.0, 1)
+
+
+def test_remove_item_removes_first_matching_item():
+    inventory = [
+        {"name": "Widget", "price": 1.0, "quantity": 1},
+        {"name": "Gadget", "price": 2.0, "quantity": 1},
+        {"name": "Widget", "price": 3.0, "quantity": 1},
+    ]
+
+    updated = remove_item(inventory, "Widget")
+
+    assert len(updated) == 2
+    assert updated[0].get("name") == "Gadget"
+    assert updated[1].get("name") == "Widget"
+    assert updated[1].get("price") == 3.0
+
+
+def test_remove_item_no_match_leaves_inventory_unchanged():
+    inventory = [{"name": "Gadget", "price": 4.5, "quantity": 2}]
+
+    updated = remove_item(inventory, "Missing")
+
+    assert updated == [{"name": "Gadget", "price": 4.5, "quantity": 2}]

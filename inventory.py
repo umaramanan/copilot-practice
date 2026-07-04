@@ -30,3 +30,22 @@ def add_item(inventory: List[Dict], name: str, price: float, quantity: int) -> L
 
     inventory.append(item)
     return inventory
+
+
+def remove_item(inventory: list[dict], name: str) -> list[dict]:
+    """Remove the first item matching ``name`` from inventory and return the list.
+
+    Args:
+        inventory: A list of item dictionaries.
+        name: The item name to remove.
+
+    Returns:
+        The inventory list after removing the first matching item, if found.
+        If no item matches, the inventory is returned unchanged.
+    """
+    for index, item in enumerate(inventory):
+        if item.get("name") == name:
+            del inventory[index]
+            break
+
+    return inventory
