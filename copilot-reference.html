@@ -224,7 +224,7 @@
   <a href="#m5">5. Agent Mode & Testing</a>
   <a href="#m6">6. Copilot CLI</a>
   <a href="#m65">6.5 Git & PR Workflow</a>
-  <a href="#m7">7. CI/CD (in progress)</a>
+  <a href="#m7">7. CI/CD with GitHub Actions</a>
   <div class="group-label">Quick Reference</div>
   <a href="#cheatsheet">All Commands Cheat Sheet</a>
   <a href="#glossary">Glossary</a>
@@ -465,27 +465,18 @@ git push</code></pre>
 
   <!-- MODULE 7 -->
   <section class="module" id="m7">
-    <h2>Module 7 — CI/CD with GitHub Actions <span class="status progress">In progress</span></h2>
+    <h2>Module 7 — CI/CD with GitHub Actions <span class="status done">Done</span></h2>
     <div class="module-goal">Make tests run automatically on every Pull Request, instead of relying on remembering to run pytest by hand.</div>
 
-    <h3>The plain-English idea</h3>
-    <ol>
-      <li>When should the robot wake up? → Whenever someone opens a Pull Request</li>
-      <li>What computer does it use? → A fresh Ubuntu Linux machine, provided free by GitHub</li>
-      <li>What does it do, step by step?
-        <ul>
-          <li>Download the project's code onto that computer</li>
-          <li>Install Python</li>
-          <li>Install pytest</li>
-          <li>Run <code class="inline">pytest</code></li>
-        </ul>
-      </li>
-    </ol>
+    <h3>Key concept</h3>
+    <p><strong>CI = Continuous Integration</strong> — automatically verifying every proposed change (every PR) the moment it's opened, on a brand-new, disposable cloud machine. Proves the code works in a clean environment, not just "worked on my machine."</p>
+
+    <div class="callout warn"><strong>Nuance:</strong> the workflow makes tests run and show ✅/❌ — it does <em>not</em> by itself block the merge button. Actually enforcing "no merge until green" needs a separate branch protection rule.</div>
 
     <h3>Where the recipe lives</h3>
     <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>.github/workflows/ci.yml</code></pre>
 
-    <h3>The workflow file (being built)</h3>
+    <h3>The final, working workflow file</h3>
     <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>name: Run Tests
 
 on: [pull_request]
@@ -493,6 +484,7 @@ on: [pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
+
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -508,7 +500,39 @@ jobs:
       - name: Run tests
         run: pytest</code></pre>
 
-    <div class="callout">We'll walk through this line by line together, then push it and watch real checks appear on PR #1's "Checks" tab for the first time.</div>
+    <h3>Line-by-line meaning</h3>
+    <table>
+      <tr><th>Line</th><th>Meaning</th></tr>
+      <tr><td><code class="inline">name: Run Tests</code></td><td>Label shown in GitHub's Checks tab / Actions dashboard</td></tr>
+      <tr><td><code class="inline">on: [pull_request]</code></td><td>Trigger — run whenever a PR is opened or updated</td></tr>
+      <tr><td><code class="inline">runs-on: ubuntu-latest</code></td><td>Use a fresh, disposable Ubuntu Linux machine</td></tr>
+      <tr><td><code class="inline">uses: actions/checkout@v4</code></td><td>Official pre-built action: download the repo's code onto that machine</td></tr>
+      <tr><td><code class="inline">uses: actions/setup-python@v5</code></td><td>Official pre-built action: install Python (version via <code class="inline">with:</code>)</td></tr>
+      <tr><td><code class="inline">run: pip install pytest</code></td><td>Direct terminal command — installs pytest</td></tr>
+      <tr><td><code class="inline">run: pytest</code></td><td>The actual test run — same command you type manually</td></tr>
+    </table>
+
+    <h3>YAML indentation rule</h3>
+    <p>Works like Python's indentation — consistent nesting defines structure. A step must be indented under <code class="inline">steps:</code>, which is indented under the job name, which is indented under <code class="inline">jobs:</code>. Get it wrong and the whole file fails to parse.</p>
+
+    <h3>Safe way to write/fix a YAML file</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>cat > .github/workflows/ci.yml << 'EOF'
+[paste the full correct YAML here]
+EOF</code></pre>
+
+    <h3>Committing and pushing it</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>git add .
+git commit -m "Add CI workflow to run pytest automatically on pull requests"
+git push</code></pre>
+    <p>Remember: stage → seal with a commit message → mail it with push. Skipping the commit means push has nothing new to send, even if staged.</p>
+
+    <h3>Where to see it working</h3>
+    <ul>
+      <li>PR page → <strong>Checks</strong> tab → workflow name with a green ✅ or red ❌</li>
+      <li>Click in to see the full step-by-step log matching your YAML exactly</li>
+    </ul>
+
+    <div class="callout"><strong>Lesson learned:</strong> real, automated tests ran on a machine you never touched, triggered purely by <code class="inline">git push</code> — the complete "workflow → PR → CI/CD" pipeline.</div>
   </section>
 
   <!-- CHEAT SHEET -->
@@ -542,7 +566,37 @@ git push --set-upstream origin branch-name   # first push of a new branch only
 echo "__pycache__/" > .gitignore
 
 # Copilot CLI
-copilot -p "task description"</code></pre>
+copilot -p "task description"
+
+# CI/CD — create the workflows folder + file
+mkdir -p .github/workflows
+touch .github/workflows/ci.yml
+
+# CI/CD — safe way to write the full YAML file
+cat > .github/workflows/ci.yml << 'EOF'
+name: Run Tests
+
+on: [pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pytest
+        run: pip install pytest
+
+      - name: Run tests
+        run: pytest
+EOF</code></pre>
   </section>
 
   <!-- GLOSSARY -->

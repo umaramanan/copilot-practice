@@ -226,12 +226,120 @@ git checkout -b branch-name     # create + switch to a new branch
 git status                      # see current branch and pending changes
 ```
 
-*(This module is still in progress — more commands will be added here as we continue: `git add`, `git commit`, `git push`, and opening the PR itself on GitHub.)*
+### The core save cycle: add → commit → push
+
+**`git add .`** — stages your changes (marks them "ready to be committed"). The `.` means "everything in this folder and subfolders." Must have a space between `add` and `.` (`git add.` is an error — that's not a real command).
+
+**`git commit -m "description"`** — saves a **checkpoint snapshot** of your staged files, locally only, with a required description of what changed. Nothing has left your Codespace yet. You can commit many times before ever pushing.
+
+**`git push`** — sends all your saved local commits up to GitHub.com, making them visible online. Until you push, your work only exists in your Codespace — if the Codespace were lost, uncommitted-and-unpushed work would be too.
+
+**Analogy:**
+| Step | Like... |
+|---|---|
+| Edit files | Writing in a document |
+| `git add` | Putting pages into an envelope, ready to mail |
+| `git commit -m "..."` | Sealing the envelope, writing a label describing the contents |
+| `git push` | Actually mailing the envelope — now it exists elsewhere too |
+
+**`.gitignore`** — a file listing things Git should never track (e.g., auto-generated folders like Python's `__pycache__/`). Create with:
+```bash
+echo "__pycache__/" > .gitignore
+```
+
+**Full real example used:**
+```bash
+git add .
+git commit -m "Add inventory tracker, tests, custom instructions, and tutorial guide"
+git push
+```
+
+**Reading `git status` output:**
+- `Untracked files` = Git sees them but isn't saving their history yet
+- `Changes to be committed` = staged, ready for `git commit`
+- `Your branch is ahead of 'origin/main' by N commits` = you have local commits GitHub doesn't have yet — need to `git push`
+- `nothing to commit, working tree clean` = everything is saved and in sync
+
+*(This module continues with: creating a real feature branch, opening a Pull Request on GitHub.)*
+
+---
+
+## Module 7 — CI/CD with GitHub Actions
+
+**Goal:** Make tests run automatically on every Pull Request, so no one has to remember to type `pytest` by hand.
+
+**Key concept:** CI = Continuous Integration — automatically verifying every proposed change (every PR) the moment it's opened, on a brand-new, disposable cloud machine (not your Codespace, not your laptop). This proves the code works in a clean environment, not just "worked on my machine."
+
+**Important nuance:** creating the workflow makes tests **run and show a ✅/❌ status** — it does NOT by itself block the merge button. Actually preventing merge-when-failing requires a separate "branch protection rule" (not set up in this project, but good to know exists).
+
+**Where the workflow file lives:**
+```
+.github/workflows/ci.yml
+```
+
+**The complete working file:**
+```yaml
+name: Run Tests
+
+on: [pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pytest
+        run: pip install pytest
+
+      - name: Run tests
+        run: pytest
+```
+
+**Line-by-line meaning:**
+| Line | Meaning |
+|---|---|
+| `name: Run Tests` | Label shown in GitHub's Checks tab / Actions dashboard |
+| `on: [pull_request]` | Trigger — run whenever a PR is opened or updated |
+| `runs-on: ubuntu-latest` | Use a fresh, disposable Ubuntu Linux machine |
+| `uses: actions/checkout@v4` | Official pre-built action: download the repo's code onto that machine |
+| `uses: actions/setup-python@v5` | Official pre-built action: install Python (version specified via `with:`) |
+| `run: pip install pytest` | A direct terminal command (`run:` vs. `uses:` — running your own command vs. using someone else's pre-built action) |
+| `run: pytest` | The actual test run — same command you've been typing manually |
+
+**YAML indentation rule:** works like Python's indentation — consistent nesting defines structure. A step (`- name: ...`) must be indented under `steps:`, which must be indented under the job (`test:`), which is indented under `jobs:`. Get it wrong and the whole file fails to parse.
+
+**Safe way to write/fix a YAML file (same trick as fixing corrupted Python files):**
+```bash
+cat > .github/workflows/ci.yml << 'EOF'
+[paste the full correct YAML here]
+EOF
+```
+
+**Committing and pushing it (the exact cycle, no shortcuts):**
+```bash
+git add .
+git commit -m "Add CI workflow to run pytest automatically on pull requests"
+git push
+```
+Remember: `git add` (stage) → `git commit -m "..."` (seal with a label) → `git push` (mail it). Skipping the commit step means push has nothing new to send, even if the file is staged.
+
+**Where to see it working:**
+- PR page → **Checks** tab → shows the workflow name and a green ✅ or red ❌
+- Click into it to see the full step-by-step log (checkout → Python setup → pytest install → pytest run), matching your YAML exactly
+
+**Lesson learned:** you watched real, automated tests run on a machine you never touched, triggered purely by `git push` — this is the actual "workflow to PR to CI/CD" pipeline you set out to learn.
 
 ---
 
 ## Still to come (will be added to this guide as we go)
-- **Module 7 — CI/CD with GitHub Actions:** writing a `.yml` workflow file that auto-runs tests on every push/PR
 - **Module 8 — Code Review & Merge:** Copilot-generated PR descriptions, automated code review, resolving comments
 - **Module 9 — Cloud Agent:** assigning a GitHub Issue and letting Copilot build + PR it autonomously
 
