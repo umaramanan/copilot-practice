@@ -49,3 +49,17 @@ def remove_item(inventory: list[dict], name: str) -> list[dict]:
             break
 
     return inventory
+
+
+def get_total_inventory_value(inventory: list[dict]) -> float:
+    """Calculate the total value of all items in the inventory.
+
+    Args:
+        inventory: A list of item dictionaries. Each item may have 'price' and
+            'quantity' keys. Missing keys are treated as 0.
+
+    Returns:
+        The sum of (price × quantity) for every item in the inventory.
+        Returns 0.0 if the inventory list is empty.
+    """
+    return sum(item.get("price", 0) * item.get("quantity", 0) for item in inventory)
