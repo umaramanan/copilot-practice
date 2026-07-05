@@ -410,9 +410,188 @@ You now have real, hands-on experience with the entire pipeline originally asked
 
 Just as importantly, you practiced the discipline that makes this safe in real teams: reading diffs before merging, proving tests are real by breaking code on purpose, catching AI-added behavior you didn't ask for, and verifying claims yourself rather than trusting labels or summaries at face value.
 
+## Module 9.5, Part A — MCP (Model Context Protocol)
+
+**Goal:** Give Copilot the ability to call a live, custom tool during a conversation — not just read static code.
+
+**Key concept:** Everything before this module only let Copilot *read* files. **MCP (Model Context Protocol, created by Anthropic)** lets Copilot *call* external programs live, during a chat, and get real-time answers back — the same mechanism real integrations use (e.g., a Jenkins MCP server letting Copilot check a real build's status).
+
+**The restaurant analogy:** Copilot is a waiter who could only read the recipe book (your code) before. MCP gives it a working kitchen with a menu — it can now actually order a real dish (call a tool) and bring back real food (a live answer), instead of just describing a recipe.
+
+### Building the server
+
+**Install the SDK:**
+```bash
+pip install mcp --break-system-packages
+```
+
+**The complete server file (`mcp_server.py`):**
+```python
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("inventory-tools")
+
+from inventory import get_total_inventory_value
+
+sample_inventory = [
+    {"name": "Widget", "price": 9.99, "quantity": 5},
+    {"name": "Gadget", "price": 4.50, "quantity": 12},
+]
+
+@mcp.tool()
+def get_inventory_summary() -> dict:
+    total_value = get_total_inventory_value(sample_inventory)
+    return {"total_value": total_value}
+
+@mcp.tool()
+def get_inventory_items() -> list[dict]:
+    """Return the full list of inventory items with name, price, and quantity."""
+    return sample_inventory
+
+if __name__ == "__main__":
+    mcp.run()
+```
+
+**Key new concept — the decorator:**
+`@mcp.tool()` is a **decorator** — a label placed directly above a function that tells the MCP library "expose this specific function as something Copilot can discover and call." Without it, the function would just be an ordinary, uncallable-by-Copilot piece of code.
+
+**Real vs. mocked, an important distinction:**
+- The **calculation** (`get_total_inventory_value`) is 100% real — it's the actual, already-tested function imported directly from `inventory.py`, not a re-implementation
+- The **data** (`sample_inventory`) is mocked/hardcoded — standing in for what would be a real live database in production
+
+### Connecting it to VS Code
+
+**Create `.vscode/mcp.json`:**
+```bash
+mkdir -p .vscode
+cat > .vscode/mcp.json << 'EOF'
+{
+  "servers": {
+    "inventory-tools": {
+      "type": "stdio",
+      "command": "python3",
+      "args": ["mcp_server.py"]
+    }
+  }
+}
+EOF
+```
+This tells VS Code how to automatically start the server — no manual `python3 mcp_server.py` needed, and no need to ever attach this file in chat. It works automatically in the background, the same way `.github/copilot-instructions.md` does.
+
+**How to verify it's connected:** open `.vscode/mcp.json` in the editor — VS Code shows an inline status: `Running | Stop | Restart | N tools`. After adding a new tool, click **Restart** and confirm the tool count increased.
+
+### The key lesson — how the AI decides which tool to use
+
+**The user never needs to know a tool exists, name it, or attach anything.** Copilot reads each tool's **docstring/description** and silently matches it against the user's natural question. Proven directly in this session:
+
+- Asked: *"What's my current inventory worth?"* (no mention of MCP/tools) → Copilot correctly called `get_inventory_summary`
+- Asked for an itemized breakdown → Copilot recognized the first tool couldn't answer this, asked for either a new tool or more info
+- After adding `get_inventory_items` → the same itemized question now succeeded, with Copilot picking the *new* tool automatically and doing the line-total math itself
+
+**Real-world parallel:** a customer asking a support AI *"is my order still processing?"* never mentions a tool by name — the AI silently matches the question against tool descriptions (e.g., `check_order_status`) and calls the right one. This is why writing clear, accurate tool descriptions is the critical design skill — it's the *only* signal the AI uses to decide when a tool applies (the same "specificity matters" lesson from Module 2, now applied to tool descriptions instead of code prompts).
+
+**Debugging note:** hit a real `IndentationError` from a single stray leading space before a second `@mcp.tool()` line — same category of bug as Module 3, just in a new file. Fixed with the same safe full-file overwrite trick (`cat > file << 'EOF'`).
+
+**Committed via the standard cycle:** branch (`add-mcp-server`) → commit → push → PR → merge, same as every other module.
+
+---
+
+## Troubleshooting Log — Every Real Issue We Hit, and the Fix
+
+A running list of genuine problems encountered during this course, in the order they happened — kept here because these are exactly the errors you'll run into again in real work.
+
+### 1. Copilot added extra, unrequested code (Module 1)
+**What happened:** asked for one function via a comment; Copilot also generated an unrelated "add two numbers" example above it.
+**Fix:** manually deleted the unwanted code.
+**Lesson:** always review and clean up suggestions — Copilot pattern-matches, it doesn't read intent.
+
+### 2. Editor kept re-inserting old code while typing (Module 3)
+**What happened:** every time new code was typed/pasted into `warmup.py`, leftover ghost-text fragments from an earlier suggestion kept getting re-accepted, corrupting the file repeatedly.
+**Fix:** stopped editing in the GUI editor; overwrote the file directly from the terminal instead:
+```bash
+cat > filename.py << 'EOF'
+[full clean content]
+EOF
+```
+**Lesson:** when the editor is fighting you, bypass it — a terminal overwrite is immune to auto-suggestion interference.
+
+### 3. `IndentationError` from a leftover code fragment (Module 3)
+**What happened:** a partially-commented-out old block left real code floating with no enclosing function, breaking Python's indentation rules.
+**Fix:** used `cat -A` / careful reading to find the fragment, then rewrote the file cleanly via the same `cat > file << 'EOF'` trick.
+**Lesson:** Python (and YAML) indentation errors are almost always fixed by finding and removing/realigning one specific stray line — read the error's line number literally.
+
+### 4. `git add.` — missing space
+**Error:** `Nothing specified, nothing added.`
+**Fix:** `git add .` (note the space between `add` and `.`).
+
+### 5. `git commit "message"` — missing `-m` flag
+**Error:** `error: pathspec 'message text' did not match any file(s) known to git`
+**Fix:** `git commit -m "message text"` — Git assumes you're naming a file without `-m`.
+
+### 6. `--set-upstream orgin branch-name` — misspelled "origin"
+**Error:** `fatal: 'orgin' does not appear to be a git repository`
+**Fix:** check spelling carefully — `origin`, not `orgin`.
+
+### 7. "has no upstream branch" on first push of a new branch
+**Error:** `fatal: The current branch X has no upstream branch.`
+**Fix:** `git push --set-upstream origin branch-name` (only needed once per new branch; plain `git push` works after that).
+
+### 8. YAML indentation errors while hand-typing `ci.yml`
+**What happened:** `steps:` ended up at the same indent level as `test:` instead of nested one level deeper, and manual editor clicks kept misplacing indentation.
+**Fix:** rewrote the whole file in one safe terminal overwrite (`cat > file << 'EOF'`) instead of fixing indentation by hand in the editor.
+**Lesson:** YAML structure = Python-style indentation rules; when spacing keeps going wrong, a full clean rewrite beats manual fixing.
+
+### 9. Pasting a URL into the terminal instead of the browser
+**Error:** `bash: https://...: No such file or directory`
+**Fix:** web addresses go in the browser's address bar, not the terminal — the terminal only runs commands, not URLs.
+
+### 10. `git checkout -b` on a branch that already exists
+**Error:** `fatal: a branch named 'X' already exists`
+**Fix:** drop the `-b` — just `git checkout existing-branch-name` to switch to it (no `-b` needed if it already exists).
+
+### 11. Staged and committed, but `git push` said "Everything up-to-date"
+**What happened:** ran `git add` then jumped straight to `git push`, skipping `git commit -m "..."` — so nothing new existed to push yet.
+**Fix:** always confirm with `git status` between steps; run the missing `git commit -m "..."` before pushing.
+
+### 12. Terminal got "stuck" mid-commit (unclosed quote)
+**What happened:** `git commit -m "message` (no closing quote) left the terminal waiting indefinitely (shown by a `>` prompt).
+**Fix:** either type the closing `"` and press Enter, or press `Ctrl+C` to cancel and retype the full command cleanly on one line.
+
+### 13. PR accidentally closed while trying to update its description
+**What happened:** clicked the wrong button near the comment-edit box, closing the PR instead of saving the description.
+**Fix:** GitHub distinguishes "Closed" (withdrawn, nothing merged) from "Merged" (purple badge, genuinely combined into main) — reopened via "Reopen pull request," and in this specific case the merge had actually already gone through under a different click, confirmed by checking `main` directly.
+**Lesson:** never trust a status label alone — verify with `git checkout main && git pull && cat file` to see if the change is genuinely present.
+
+### 14. Copilot's automated review flagged real scope creep (Module 8)
+**What happened:** a PR titled "Improved error message" had grown to include a CI workflow and two documentation files.
+**Fix:** honestly updated the PR title/description to reflect everything included, rather than pretending it was still a single small change.
+**Lesson:** this was a **legitimate catch**, not AI nitpicking — "one PR, one purpose" is real best practice.
+
+### 15. Agent-created PR blocked by two safety gates (Module 9)
+**Gate A:** "1 workflow awaiting approval" — GitHub requires a human to explicitly approve running CI on automated-agent PRs. Fix: click "Approve workflows to run."
+**Gate B:** "Draft pull requests cannot be merged." Fix: click "Ready for review" first.
+
+### 16. Truncated branch names from Cloud Agent PRs
+**What happened:** the branch name shown in the PR UI was cut off mid-word compared to the real branch name.
+**Fix:** `git fetch origin` first, then `git branch -a` to see the full, exact remote branch name before checking it out.
+
+### 17. `IndentationError` in the MCP server — one stray leading space
+**What happened:** a second `@mcp.tool()` decorator had exactly one space before it, while the first didn't — Python rejected the mismatched indentation.
+**Fix:** found it using `cat -A filename` (reveals hidden spacing), then rewrote the whole file cleanly via terminal overwrite.
+
+### 18. Manually running the MCP server produced a confusing JSON error
+**What happened:** ran `python3 mcp_server.py` directly and typed into it manually — MCP servers expect a very specific structured message format (JSON-RPC), not plain typed text, so it threw a parsing error.
+**Fix:** this wasn't actually a bug — the server was running correctly. The correct way to use it is letting VS Code's `.vscode/mcp.json` config start and talk to it automatically, not typing into it directly.
+**Lesson:** an "error" isn't always a real failure — sometimes it just means you're testing something the wrong way.
+
+### The pattern across almost every issue above
+Nearly every real problem in this course came from one of: **a typo, a skipped step (like forgetting `git commit`), a spacing/indentation mismatch, or misunderstanding what a tool actually expects.** None of it was Copilot or Git being unreliable — it was the normal, expected friction of real development, and every single one was solved by **reading the error message carefully and verifying rather than guessing.**
+
 ---
 
 ## Complete Git Command Reference
+
+
 
 Everything from branches to checkout to the save cycle, in one place — including a few you haven't used yet but will need.
 

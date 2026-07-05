@@ -228,6 +228,8 @@
   <a href="#m8">8. Code Review & Merge</a>
   <a href="#m9">9. Cloud Agent</a>
   <a href="#complete">🎓 Course Complete</a>
+  <a href="#m95">9.5 MCP (bonus)</a>
+  <a href="#troubleshooting">Troubleshooting Log</a>
   <div class="group-label">Quick Reference</div>
   <a href="#gitref">Full Git Command Reference</a>
   <a href="#cheatsheet">All Commands Cheat Sheet</a>
@@ -606,6 +608,143 @@ pytest</code></pre>
     <h2>🎓 Course Complete — Full Pipeline Achieved</h2>
     <p>You now have real, hands-on experience with the entire pipeline: <strong>describe a task → Copilot writes code (inline, Chat, Agent Mode, CLI, or a fully autonomous Cloud Agent) → branch → PR → automated CI/CD → automated code review → merge into main.</strong></p>
     <p>Just as importantly, you practiced the discipline that makes this safe: reading diffs before merging, proving tests are real by breaking code on purpose, catching AI-added behavior you didn't ask for, and verifying claims yourself rather than trusting labels or summaries.</p>
+  </section>
+
+  <!-- MODULE 9.5 -->
+  <section class="module" id="m95">
+    <h2>Module 9.5, Part A — MCP (Model Context Protocol) <span class="status done">Done</span></h2>
+    <div class="module-goal">Give Copilot the ability to call a live, custom tool during a conversation — not just read static code.</div>
+
+    <h3>Key concept</h3>
+    <p><strong>MCP</strong> (created by Anthropic) lets Copilot <em>call</em> external programs live, during a chat, and get real-time answers back — the same mechanism real integrations use (e.g. a Jenkins MCP server letting Copilot check a real build's status).</p>
+    <div class="callout">The restaurant analogy: Copilot was a waiter who could only read the recipe book (your code). MCP gives it a working kitchen with a menu — it can now actually order a real dish (call a tool) and bring back real food (a live answer).</div>
+
+    <h3>Install the SDK</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>pip install mcp --break-system-packages</code></pre>
+
+    <h3>The complete server file (mcp_server.py)</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("inventory-tools")
+
+from inventory import get_total_inventory_value
+
+sample_inventory = [
+    {"name": "Widget", "price": 9.99, "quantity": 5},
+    {"name": "Gadget", "price": 4.50, "quantity": 12},
+]
+
+@mcp.tool()
+def get_inventory_summary() -> dict:
+    total_value = get_total_inventory_value(sample_inventory)
+    return {"total_value": total_value}
+
+@mcp.tool()
+def get_inventory_items() -> list[dict]:
+    """Return the full list of inventory items with name, price, and quantity."""
+    return sample_inventory
+
+if __name__ == "__main__":
+    mcp.run()</code></pre>
+
+    <h3>New concept: the decorator</h3>
+    <p><code class="inline">@mcp.tool()</code> is a <strong>decorator</strong> — a label placed directly above a function telling the MCP library "expose this function as something Copilot can discover and call." Without it, the function is just ordinary, uncallable-by-Copilot code.</p>
+
+    <div class="callout warn"><strong>Real vs. mocked:</strong> the calculation (<code class="inline">get_total_inventory_value</code>) is 100% real — imported directly from <code class="inline">inventory.py</code>, not reimplemented. The data (<code class="inline">sample_inventory</code>) is mocked, standing in for a real live database.</div>
+
+    <h3>Connecting it to VS Code</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>mkdir -p .vscode
+cat > .vscode/mcp.json << 'EOF'
+{
+  "servers": {
+    "inventory-tools": {
+      "type": "stdio",
+      "command": "python3",
+      "args": ["mcp_server.py"]
+    }
+  }
+}
+EOF</code></pre>
+    <p>This tells VS Code how to automatically start the server — no manual run needed, and never attached in chat. It works in the background, same as <code class="inline">.github/copilot-instructions.md</code>. Verify via the inline status in the editor: <code class="inline">Running | Stop | Restart | N tools</code>.</p>
+
+    <h3>The key lesson — how the AI decides which tool to use</h3>
+    <p><strong>The user never needs to know a tool exists, name it, or attach anything.</strong> Copilot reads each tool's docstring/description and silently matches it against the user's natural question.</p>
+    <ul>
+      <li>Asked "What's my current inventory worth?" (no tool mentioned) → Copilot correctly called <code class="inline">get_inventory_summary</code></li>
+      <li>Asked for an itemized breakdown → Copilot recognized the first tool couldn't answer this, asked for more info/a new tool</li>
+      <li>After adding <code class="inline">get_inventory_items</code> → the same question succeeded, with Copilot picking the new tool and doing the line-total math itself</li>
+    </ul>
+    <div class="callout"><strong>Real-world parallel:</strong> a customer asking "is my order still processing?" never mentions a tool — the AI silently matches the question against tool descriptions. Writing clear, accurate tool descriptions is the critical design skill — the same "specificity matters" lesson from Module 2, now applied to tool descriptions.</div>
+
+    <h3>Debugging note</h3>
+    <p>Hit a real <code class="inline">IndentationError</code> from a single stray leading space before a second <code class="inline">@mcp.tool()</code> line — same category of bug as Module 3. Fixed with the same safe full-file overwrite trick.</p>
+
+    <p>Committed via the standard cycle: branch (<code class="inline">add-mcp-server</code>) → commit → push → PR → merge.</p>
+  </section>
+
+  <!-- TROUBLESHOOTING LOG -->
+  <section class="module" id="troubleshooting">
+    <h2>Troubleshooting Log — Every Real Issue We Hit</h2>
+    <p class="module-goal">A running list of genuine problems encountered during this course, in order — these are exactly the errors you'll run into again in real work.</p>
+
+    <h3>1. Copilot added extra, unrequested code (Module 1)</h3>
+    <p>Asked for one function via a comment; Copilot also generated an unrelated example above it. <strong>Fix:</strong> manually deleted the unwanted code. <strong>Lesson:</strong> always review — Copilot pattern-matches, it doesn't read intent.</p>
+
+    <h3>2. Editor kept re-inserting old code while typing (Module 3)</h3>
+    <p>Ghost-text fragments from an earlier suggestion kept getting re-accepted, corrupting the file. <strong>Fix:</strong> overwrite directly from the terminal instead of the GUI editor:</p>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>cat > filename.py << 'EOF'
+[full clean content]
+EOF</code></pre>
+
+    <h3>3. IndentationError from a leftover code fragment (Module 3)</h3>
+    <p>A partially-commented-out block left real code floating with no enclosing function. <strong>Fix:</strong> found it, rewrote the file cleanly via terminal overwrite. Python/YAML errors are almost always one specific stray line — read the error's line number literally.</p>
+
+    <h3>4. <code class="inline">git add.</code> — missing space</h3>
+    <p><strong>Error:</strong> Nothing specified, nothing added. <strong>Fix:</strong> <code class="inline">git add .</code> (space between <code class="inline">add</code> and <code class="inline">.</code>).</p>
+
+    <h3>5. <code class="inline">git commit "message"</code> — missing -m flag</h3>
+    <p><strong>Error:</strong> pathspec did not match any files. <strong>Fix:</strong> <code class="inline">git commit -m "message"</code>.</p>
+
+    <h3>6. <code class="inline">orgin</code> — misspelled "origin"</h3>
+    <p><strong>Error:</strong> fatal: 'orgin' does not appear to be a git repository. <strong>Fix:</strong> spell it <code class="inline">origin</code>.</p>
+
+    <h3>7. "has no upstream branch" on first push of a new branch</h3>
+    <p><strong>Fix:</strong> <code class="inline">git push --set-upstream origin branch-name</code> (only needed once per new branch).</p>
+
+    <h3>8. YAML indentation errors while hand-typing ci.yml</h3>
+    <p><code class="inline">steps:</code> ended up at the same level as <code class="inline">test:</code> instead of nested deeper. <strong>Fix:</strong> rewrote the whole file in one safe terminal overwrite instead of fixing by hand.</p>
+
+    <h3>9. Pasting a URL into the terminal instead of the browser</h3>
+    <p><strong>Error:</strong> bash: https://...: No such file or directory. <strong>Fix:</strong> URLs go in the browser address bar, not the terminal.</p>
+
+    <h3>10. <code class="inline">git checkout -b</code> on a branch that already exists</h3>
+    <p><strong>Error:</strong> fatal: a branch named 'X' already exists. <strong>Fix:</strong> drop <code class="inline">-b</code>, just <code class="inline">git checkout existing-branch-name</code>.</p>
+
+    <h3>11. Staged and committed, but push said "Everything up-to-date"</h3>
+    <p>Skipped <code class="inline">git commit -m "..."</code> between add and push. <strong>Fix:</strong> always confirm with <code class="inline">git status</code> between steps.</p>
+
+    <h3>12. Terminal "stuck" mid-commit (unclosed quote)</h3>
+    <p><code class="inline">git commit -m "message</code> (no closing quote) left the terminal waiting (a <code class="inline">></code> prompt). <strong>Fix:</strong> close the quote and press Enter, or <code class="inline">Ctrl+C</code> to cancel and retype cleanly.</p>
+
+    <h3>13. PR accidentally closed while editing its description</h3>
+    <p>Clicked the wrong button, closing the PR instead of saving. <strong>Fix:</strong> distinguish "Closed" (withdrawn) from "Merged" (purple badge, genuinely combined) — verify with <code class="inline">git checkout main && git pull && cat file</code>, never trust a label alone.</p>
+
+    <h3>14. Copilot's review flagged real scope creep (Module 8)</h3>
+    <p>A PR titled "Improved error message" had grown to include CI + docs. <strong>Fix:</strong> honestly updated the title/description. This was a legitimate catch — "one PR, one purpose" is real best practice.</p>
+
+    <h3>15. Agent-created PR blocked by two safety gates (Module 9)</h3>
+    <p><strong>Gate A:</strong> "1 workflow awaiting approval" → click "Approve workflows to run." <strong>Gate B:</strong> "Draft pull requests cannot be merged" → click "Ready for review" first.</p>
+
+    <h3>16. Truncated branch names from Cloud Agent PRs</h3>
+    <p>The UI showed a cut-off branch name. <strong>Fix:</strong> <code class="inline">git fetch origin</code> then <code class="inline">git branch -a</code> to find the exact full name.</p>
+
+    <h3>17. IndentationError in the MCP server — one stray leading space</h3>
+    <p>A second <code class="inline">@mcp.tool()</code> had one space before it. <strong>Fix:</strong> found it with <code class="inline">cat -A filename</code> (reveals hidden spacing), then rewrote cleanly via terminal overwrite.</p>
+
+    <h3>18. Manually running the MCP server produced a confusing JSON error</h3>
+    <p>Typing directly into <code class="inline">python3 mcp_server.py</code> isn't how it's meant to be used — MCP expects structured messages (JSON-RPC), not plain typed text. <strong>Fix:</strong> not actually a bug — let <code class="inline">.vscode/mcp.json</code> start and talk to it automatically instead.</p>
+
+    <div class="callout"><strong>The pattern across almost every issue:</strong> nearly every problem came from a typo, a skipped step, a spacing/indentation mismatch, or misunderstanding what a tool expects — never Copilot or Git being unreliable. Every one was solved by reading the error message carefully and verifying rather than guessing.</div>
   </section>
 
   <!-- GIT REFERENCE -->
