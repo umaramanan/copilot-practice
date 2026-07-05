@@ -102,3 +102,14 @@ def test_get_total_inventory_value_missing_quantity():
 
     assert total == 0.0
 
+
+def test_get_total_inventory_value_negative_quantity():
+    # Current behavior: get_total_inventory_value does not validate quantity
+    # values. A negative quantity causes price × quantity to yield a negative
+    # contribution, resulting in a negative total. No error is raised.
+    inventory = [{"name": "Widget", "price": 9.99, "quantity": -3}]
+
+    total = get_total_inventory_value(inventory)
+
+    assert total == pytest.approx(9.99 * -3)
+
