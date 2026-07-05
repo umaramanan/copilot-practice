@@ -113,3 +113,32 @@ def test_get_total_inventory_value_negative_quantity():
 
     assert total == pytest.approx(9.99 * -3)
 
+
+def test_get_total_inventory_value_negative_price():
+    # Current behavior: get_total_inventory_value does not validate price
+    # values. A negative price causes price × quantity to yield a negative
+    # contribution, resulting in a negative total. No error is raised.
+    # TODO: once inventory.py is fixed, this test should be updated to assert
+    # that a ValueError is raised instead.
+    inventory = [{"name": "Widget", "price": -9.99, "quantity": 3}]
+
+    total = get_total_inventory_value(inventory)
+
+    assert total == pytest.approx(-9.99 * 3)
+
+
+def test_get_total_inventory_value_mixed_positive_and_negative_price():
+    # Current behavior: items with negative prices silently reduce the total.
+    # A mix of positive and negative prices yields a sum that can be lower
+    # than the value of any single item, which is incorrect.
+    # TODO: once inventory.py is fixed, this test should be updated to assert
+    # that a ValueError is raised for the negative-price item.
+    inventory = [
+        {"name": "Widget", "price": 10.00, "quantity": 2},
+        {"name": "Discount", "price": -3.00, "quantity": 1},
+    ]
+
+    total = get_total_inventory_value(inventory)
+
+    assert total == pytest.approx(10.00 * 2 + (-3.00) * 1)
+
