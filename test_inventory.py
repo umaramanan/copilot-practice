@@ -1,6 +1,6 @@
 import pytest
 
-from inventory import add_item, remove_item
+from inventory import add_item, get_total_inventory_value, remove_item
 
 
 def test_add_item_to_empty_inventory():
@@ -68,3 +68,37 @@ def test_remove_item_no_match_leaves_inventory_unchanged():
     updated = remove_item(inventory, "Missing")
 
     assert updated == [{"name": "Gadget", "price": 4.5, "quantity": 2}]
+
+
+def test_get_total_inventory_value_multiple_items():
+    inventory = [
+        {"name": "Widget", "price": 9.99, "quantity": 3},
+        {"name": "Gadget", "price": 4.5, "quantity": 2},
+    ]
+
+    total = get_total_inventory_value(inventory)
+
+    assert total == pytest.approx(9.99 * 3 + 4.5 * 2)
+
+
+def test_get_total_inventory_value_empty_inventory():
+    total = get_total_inventory_value([])
+
+    assert total == 0.0
+
+
+def test_get_total_inventory_value_missing_price():
+    inventory = [{"name": "Widget", "quantity": 5}]
+
+    total = get_total_inventory_value(inventory)
+
+    assert total == 0.0
+
+
+def test_get_total_inventory_value_missing_quantity():
+    inventory = [{"name": "Widget", "price": 9.99}]
+
+    total = get_total_inventory_value(inventory)
+
+    assert total == 0.0
+
